@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>爱心弹窗 · 温暖汇聚</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100vw; height: 100vh; overflow: hidden;
+  background: #f8f4f0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  user-select: none;
+}
+
+/* 底部装饰 */
+.footer {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  font-size: 13px; color: #ccc; letter-spacing: 2px; z-index: 0;
+  pointer-events: none;
+}
+
+/* ---- 便签卡片 ---- */
+.card {
+  position: absolute;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  z-index: 10;
+}
+.card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+
+/* 标题栏 */
+.title-bar {
+  height: 16px; display: flex; align-items: center;
+  background: #e2ddd6; padding: 0 4px; cursor: default;
+}
+.title-btn {
+  width: 14px; height: 14px; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; border-radius: 2px;
+  font-size: 10px; color: #666; line-height: 1;
+  transition: background 0.15s;
+}
+.title-btn:hover { background: #d0cbc4; }
+.title-btn:active { background: #c0bbb4; }
+.title-spacer { flex: 1; }
+
+/* 文字区 */
+.card-body {
+  display: flex; align-items: center; justify-content: center;
+  height: calc(100% - 16px); padding: 4px 8px;
+  font-size: 13px; color: #333; text-align: center;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div class="footer">❤ 每一张便签都是一份牵挂 ❤</div>
+
+<script>
+// ============================================================
+// 文案池
+// ============================================================
+const TEXTS = [
+  '今天学习了吗','坚持就是胜利','你比你想象的更优秀',
+  '每天进步一点点','学习使我快乐','知识就是力量',
+  '今天的努力是明天的底气','越努力越幸运','相信自己你可以',
+  '专注当下','沉下心来','保持好奇心','探索未知',
+  '学习是一辈子的事','不为失败找借口','只为成功找方法',
+  '你的潜力无限','勇敢尝试','不怕犯错','错了就改',
+  '每一次练习都在进步','量变引起质变','厚积薄发',
+  '星光不问赶路人','时光不负有心人','天道酬勤',
+  '书山有路勤为径','学海无涯苦作舟','腹有诗书气自华',
+  '保持思考','多问为什么','追根溯源','构建知识体系',
+  '融会贯通','举一反三','温故而知新','学而时习之',
+  '不耻下问','三人行必有我师','学而不思则罔',
+  '思而不学则殆','博学之审问之','慎思明辨笃行',
+  '数学公式记牢','语文古诗背熟','英语单词打卡',
+  '物理公式理解','化学方程式背','政治提纲过一遍',
+  '历史时间轴理','地理地图多看','生物知识点记',
+  '作文素材积累','阅读理解练手','计算别粗心',
+  '审题要仔细','步骤写完整','检查别漏题',
+  '多喝水哦~','好好吃饭','别熬夜','记得吃早餐',
+  '早点睡觉','注意身体','不要太累','照顾好自己',
+  '累了就休息','多吃水果','按时吃饭','记得运动',
+  '少吃外卖','天冷了多穿衣服','天热了注意防暑',
+  '久坐了起来走走','眼睛累了看看远处','颈椎不舒服活动下',
+  '雨天记得带伞','午休眯一会儿','多喝热水',
+  '早餐要吃好','午餐要吃饱','晚餐要吃少',
+  '休息是为了更好地出发',
+  '不要焦虑','每个人都有自己的节奏','慢一点没关系',
+  '不要和别人比','和昨天的自己比','你已经很棒了',
+  '允许自己偶尔摆烂','摆烂完继续冲','调整好状态',
+  '保持好心情','开心学习','学习也可以很有趣',
+  '找到你的兴趣点','热爱可抵岁月漫长',
+  '你终将上岸','阳光万里','未来可期','前程似锦',
+  '愿你所得皆所愿','愿你成为更好的自己','顶峰相见',
+  '愿你眼里有光心中有爱','愿你历尽千帆归来仍是少年',
+  '愿你被世界温柔以待','你值得所有美好','加油未来可期',
+  '保持热爱奔赴山海','人间值得你也值得','做自己喜欢的事',
+  '不要否定自己','你真的很优秀','今天辛苦了','明天会更好',
+  '所求皆如愿','所行皆坦途','万事胜意','平安喜乐',
+  '诸事顺遂','岁月静好','心安即是归处',
+  '一次跌倒不算什么','爬起来继续走','人生没有白走的路',
+  '每一步都算数','做自己的光','无需借谁的光','你本来就是星星',
+];
+
+// ============================================================
+// 颜色池
+// ============================================================
+const COLORS = [
+  '#FFD1DC','#FFE4C4','#D1E4FF','#D1FFDC','#FFF0D1',
+  '#E6D1FF','#FFD1F0','#D1FFF0','#FFDCD1','#F0FFD1',
+  '#FFDAB9','#D8E6FF','#FFE1E1','#DCFFDC','#FFEBD7',
+];
+
+// ============================================================
+// 工具
+// ============================================================
+const W = window.innerWidth, H = window.innerHeight;
+const CARD_W = 150, CARD_H = 52;
+
+// 三个按钮的回调
+function btnMin(el) {
+  const card = el.closest('.card');
+  if (!card) return;
+  if (card.dataset.collapsed === '1') {
+    card.style.height = CARD_H + 'px';
+    card.querySelector('.card-body').style.display = 'flex';
+    card.dataset.collapsed = '0';
+  } else {
+    card.style.height = '16px';
+    card.querySelector('.card-body').style.display = 'none';
+    card.dataset.collapsed = '1';
+  }
+}
+function btnMax(el) {
+  const card = el.closest('.card');
+  if (!card) return;
+  if (card.dataset.expanded === '1') {
+    card.style.width = CARD_W + 'px';
+    card.style.height = CARD_H + 'px';
+    card.querySelector('.card-body').style.display = 'flex';
+    card.dataset.expanded = '0';
+  } else {
+    card.style.width = '280px';
+    card.style.height = '110px';
+    card.querySelector('.card-body').style.display = 'flex';
+    card.dataset.expanded = '1';
+  }
+}
+function btnClose(el) {
+  const card = el.closest('.card');
+  if (!card) card = el;
+  if (card && card.classList.contains('card')) {
+    card.remove();
+  }
+}
+
+function createCard(x, y, tip, isHs) {
+  const bg = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;left:${x}px;top:${y}px;background:${bg};`;
+  card.dataset.collapsed = '0';
+  card.dataset.expanded = '0';
+
+  // 标题栏
+  const tb = document.createElement('div');
+  tb.className = 'title-bar';
+
+  const mkBtn = (txt, fn) => {
+    const b = document.createElement('div');
+    b.className = 'title-btn';
+    b.textContent = txt;
+    b.addEventListener('click', (e) => { e.stopPropagation(); fn(b); });
+    return b;
+  };
+
+  tb.appendChild(mkBtn('—', btnMin));
+  tb.appendChild(mkBtn('□', btnMax));
+  tb.appendChild(document.createElement('div')).className = 'title-spacer';
+  tb.appendChild(mkBtn('×', btnClose));
+
+  card.appendChild(tb);
+
+  // 文字区
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  body.textContent = tip;
+  card.appendChild(body);
+
+  document.body.appendChild(card);
+  return card;
+}
+
+// ============================================================
+// 爱心数学
+// ============================================================
+function heartPoint(t) {
+  const x = 16 * Math.pow(Math.sin(t), 3);
+  const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+  return [x, y];
+}
+
+function genHeartTargets(n) {
+  const cx = W / 2, cy = H / 2 - 30;
+  const scale = Math.min(W, H) / 40;
+  const pts = [];
+  const nOut = Math.floor(n * 2 / 5);
+  for (let i = 0; i < nOut; i++) {
+    const t = 2 * Math.PI * i / nOut;
+    const [hx, hy] = heartPoint(t);
+    pts.push([cx + hx * scale - CARD_W/2, cy - hy * scale - CARD_H/2]);
+  }
+  for (let i = nOut; i < n; i++) {
+    const t = Math.random() * 2 * Math.PI;
+    const [hx, hy] = heartPoint(t);
+    const f = 0.05 + Math.random() * 0.85;
+    pts.push([cx + hx * f * scale - CARD_W/2, cy - hy * f * scale - CARD_H/2]);
+  }
+  // shuffle interior portion
+  const interior = pts.splice(nOut);
+  for (let i = interior.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [interior[i], interior[j]] = [interior[j], interior[i]];
+  }
+  return pts.concat(interior);
+}
+
+function genFloodPositions(count) {
+  const pos = [];
+  for (let i = 0; i < count; i++) {
+    pos.push([
+      Math.random() * (W - CARD_W),
+      Math.random() * (H - CARD_H),
+    ]);
+  }
+  return pos;
+}
+
+// ============================================================
+// 主流程
+// ============================================================
+(async function main() {
+  // 生成坐标
+  const heartPts = genHeartTargets(200);
+  const floodCount = Math.floor(W * H / (CARD_W * CARD_H) * 1.5);
+  const floodPts = genFloodPositions(floodCount);
+
+  // ---- Phase 1: 爱心弹出 ----
+  for (let i = 0; i < heartPts.length; i++) {
+    const [x, y] = heartPts[i];
+    const tip = (i === heartPts.length - 1) ? '保持好心情'
+                : TEXTS[Math.floor(Math.random() * TEXTS.length)];
+    const card = createCard(x, y, tip, true);
+    // 初始缩小 + 透明度，弹入动画
+    card.style.transform = 'scale(0.2)';
+    card.style.opacity = '0';
+    card.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
+    requestAnimationFrame(() => {
+      card.style.transform = 'scale(1)';
+      card.style.opacity = '1';
+    });
+    // 去除动画，让 hover shadow 正常工作
+    setTimeout(() => {
+      card.style.transition = 'box-shadow 0.2s';
+      card.style.transform = '';
+    }, 500);
+    await new Promise(r => setTimeout(r, 30));
+  }
+
+  // 心跳等待
+  await new Promise(r => setTimeout(r, 1500));
+
+  // ---- Phase 2: 爱心回归中心 ----
+  const allCards = [...document.querySelectorAll('.card')].filter(
+    c => !c.dataset._flood);
+  for (const card of allCards) {
+    card.style.transition = 'all 0.2s cubic-bezier(0.55,0,1,0.45)';
+    card.style.left = (W/2 - CARD_W/2 + (Math.random()-0.5)*40) + 'px';
+    card.style.top = (H/2 - CARD_H/2 + (Math.random()-0.5)*40) + 'px';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.3)';
+  }
+  // 等它们聚拢消失
+  await new Promise(r => setTimeout(r, 400));
+
+  // 移除爱心卡片
+  for (const card of allCards) card.remove();
+
+  await new Promise(r => setTimeout(r, 400));
+
+  // ---- Phase 3: 满屏弹出 ----
+  for (let i = 0; i < floodPts.length; i++) {
+    const [x, y] = floodPts[i];
+    const tip = TEXTS[Math.floor(Math.random() * TEXTS.length)];
+    const card = createCard(x, y, tip, false);
+    card.dataset._flood = '1';
+    card.style.transform = 'scale(0.3)';
+    card.style.opacity = '0';
+    card.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s';
+    requestAnimationFrame(() => {
+      card.style.transform = 'scale(1)';
+      card.style.opacity = '1';
+    });
+    setTimeout(() => {
+      card.style.transition = 'box-shadow 0.2s';
+      card.style.transform = '';
+    }, 400);
+    await new Promise(r => setTimeout(r, 5));
+  }
+})();
+
+// 空格键关闭全部
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    document.querySelectorAll('.card').forEach(c => c.remove());
+  }
+});
+</script>
+</body>
+</html>
